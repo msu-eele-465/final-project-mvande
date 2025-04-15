@@ -6,7 +6,19 @@
 
 ## Embedded System Description
 
-At a high level, explain in 2-3 sentences what your embedded system will do.  Then, in 1-2 sentences each, explain each input, the process, and each output. This section is the bulk of the proposal.
+My embedded system will track the position of a hand in 3D space and how closed or open the fingers on the hand are. This will be accomplished with a combination of a gyroscope and a rotary encoder. The position and closedness of the fingers will be indicated on an LCD display and an LED bar array.
+
+The first input of the system will be a rotary encoder. The output of the encoder will be filtered through an encoder converter and then passed into the master controller. The output from the encoder converter will be used to drive an up/down counter on the master controller.
+
+The second input in the system will be a 6-axis gyroscope. The master controller will read the values on the gyroscope over I2C and calculate the gyroscope's position in 3D space.
+
+The third input to the system will be a SPDT button that will act as a reset switch for the gyroscope and encoder.
+
+Moving on to the outputs of the system, the first output will be an LCD display. The display will show the X, Y, and Z coordinates of the gyroscope and be driven by a slave microcontroller. The master controller will communicate the gyroscope's position to the slave controller over I2C
+
+The second output will be an LED bar array driven by another slave microcontoller. The master controller will direct the slave controller on how full the LED bar array should be based on the closedness of the finger according to the rotary encoder.
+
+The third output(s) will be status LED connected to the two slave controllers to indicate when they receive data over I2C.
 
 ## Hardware Setup
 
