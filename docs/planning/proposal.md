@@ -14,11 +14,12 @@ The second input in the system will be a 6-axis gyroscope. The master controller
 
 The third input to the system will be a SPDT button that will act as a reset switch for the gyroscope and encoder.
 
-Moving on to the outputs of the system, the first output will be an LCD display. The display will show the X, Y, and Z coordinates of the gyroscope and be driven by a slave microcontroller. The master controller will communicate the gyroscope's position to the slave controller over I2C
+Moving on to the outputs of the system, the first output will be an LCD display. The display will show the X, Y, and Z coordinates of the gyroscope and be driven by a slave microcontroller. The master controller will communicate the gyroscope's position to the slave controller over I2C.
 
-The second output will be an LED bar array driven by another slave microcontoller. The master controller will direct the slave controller on how full the LED bar array should be based on the closedness of the finger according to the rotary encoder.
+The second output will be an LED bar array driven by another slave microcontroller. The master controller will direct the slave controller on how full the LED bar array should be based on the closedness of the finger according to the rotary encoder.
 
-The third output(s) will be status LED connected to the two slave controllers to indicate when they receive data over I2C.
+The third outputs will be status LEDs connected to the two slave controllers to indicate when they receive data over I2C.
+
 
 ## Hardware Setup
 
@@ -34,7 +35,7 @@ A timer interrupt will be used to periodically poll a gyroscope over I2C. Port i
 
 ## Testing Procedure
 
-A successful test will involve turning and moving the gyroscope and observing an updated output on the LCD display. Additionally pulling on the string connected to the encoder should update the fullness of the LED bar. At some point throughout the demo the reset button will be pressed and the LCD display should display all zero's and the LED bar will be unlit.
+A successful test will involve turning and moving the gyroscope and observing an updated output on the LCD display. Additionally pulling on the string connected to the encoder should update the fullness of the LED bar. At some point throughout the demo the reset button will be pressed and the LCD display should display all zeros and the LED bar will be unlit.
 
 
 ## Prescaler
@@ -81,7 +82,7 @@ The Master will be responsible for:
 
 Handling input from the the rotary encoder and I2C gyroscope, performing calculation on the inputs, and sending the transformed data out to the LED bar and LCD display drivers over I2C.
 
-The Slave(s) will be responsible for:
+The Slaves will be responsible for:
 
 Displaying finger extension, as calculated by the master, on the LED bar. Additionally driving the LCD display to show gyroscope position/data sent from the master.
 
@@ -89,4 +90,4 @@ Displaying finger extension, as calculated by the master, on the LED bar. Additi
 
 ### Argument for Desired Prescaler
 
-I believe this project meets all the requirements for the 95% prescalar due to the 3 inputs and 3 outputs. Although one of the inputs and outputs are basic, I believe the complexity of the other two inputs and outputs makes up for the basic ones. Additional challenge comes from designing and assembling the physical aperatus to hold the gyroscope and encoder. For these reasons, I believe a 95% scalar is appropiate.
+I believe this project meets all the requirements for the 95% prescaler due to the 3 inputs and 3 outputs. Although one of the inputs and outputs are basic, I believe the complexity of the other two inputs and outputs makes up for the basic ones. Additional challenge comes from designing and assembling the physical apparatus to hold the gyroscope and encoder. For these reasons, I believe a 95% scalar is appropriate.
