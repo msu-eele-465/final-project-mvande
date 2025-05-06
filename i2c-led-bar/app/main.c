@@ -67,8 +67,6 @@ void initI2C(void)
  */
 int main(void)
 {
-    const uint8_t PATTERNS[] = { { 0b00000000 }, { 0b10000000 }, { 0b00000001 } };
-
     WDTCTL = WDTPW | WDTHOLD; // Stop watchdog timer
 
     // Initialize ports and other subsystems
