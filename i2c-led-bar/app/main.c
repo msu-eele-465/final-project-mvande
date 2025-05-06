@@ -9,11 +9,8 @@
 
 #define I2C_ADDR 0x48
 
-unsigned int pattern_num = 0; // Tracks which pattern is active (0 = off, 1 =
-                              // fill left, 2 = fill right)
-uint8_t pattern = 0b00000000; // For manipulating active pattern
-
-char key = '\0';
+uint8_t old_pattern = 0b00000000; // To check against new pattern
+uint8_t new_pattern = 0b00000000; // For receiving new pattern
 
 unsigned int time_since_active = 3;
 
@@ -44,11 +41,6 @@ void initGPIO(void)
  */
 void initTimer(void)
 {
-    // ACLK, continuous mode, clear TBR, divide by 4, length 12-bit
-    TB0CTL = TBSSEL__ACLK | MC_2 | TBCLR | ID__4 | CNTL_1;
-    TB0CTL &= ~TBIFG; // Clear CCR0 Flag
-    TB0CTL |= TBIE; // Enable TB0 Overflow IRQ
-
     // ACLK, continuous mode, clear TBR, divide by 8, length 12-bit
     TB1CTL = TBSSEL__ACLK | MC_2 | TBCLR | ID__8 | CNTL_1;
     TB1CTL &= ~TBIFG; // Clear CCR0 Flag
@@ -88,72 +80,16 @@ int main(void)
 
     while (true)
     {
-        if (key != '\0')
+        if (new_pattern != old_pattern)
         {
-            if (key == 'D') // off
-            {
-                pattern_num = 0;
-                pattern = PATTERNS[pattern_num];
-            }
-            else if (key == 'A') // fill right
-            {
-                pattern_num = 1;
-                pattern = PATTERNS[pattern_num];
-            }
-            else if (key == 'B') // fill left
-            {
-                pattern_num = 2;
-                pattern = PATTERNS[pattern_num];
-            }
-
             // Set LED bar outputs
-            P1OUT = (P1OUT & 0b11111100) | (pattern & 0b00000011);
-            P1OUT = (P1OUT & 0b00001111) | ((pattern & 0b00111100) << 2);
-            P2OUT = (P2OUT & 0b00111111) | (pattern & 0b11000000);
+            P1OUT = (P1OUT & 0b11111100) | (new_pattern & 0b00000011);
+            P1OUT = (P1OUT & 0b00001111) | ((new_pattern & 0b00111100) << 2);
+            P2OUT = (P2OUT & 0b00111111) | (new_pattern & 0b11000000);
 
-            key = '\0';
+            old_pattern = new_pattern; // Update old pattern
         }
     }
-}
-
-/**
- * Timer B0 Overflow Interrupt.
- *
- * Runs every 0.5 seconds. Updates LED bar
- * display based on currently selected pattern.
- */
-#pragma vector = TIMER0_B1_VECTOR
-__interrupt void ISR_TB0_OVERFLOW(void)
-{
-    switch (pattern_num)
-    {
-        case 1: // fill right
-            if (pattern == 0b11111111)
-            {
-                pattern = ~pattern;
-            }
-            pattern = pattern >> 1;
-            pattern ^= 0b10000000;
-            break;
-        case 2: // fill left
-            if (pattern == 0b11111111)
-            {
-                pattern = ~pattern;
-            }
-            pattern = pattern << 1;
-            pattern ^= 0b00000001;
-            break;
-        default: // off
-            pattern = 0b00000000;
-            break;
-    }
-
-    // Set LED bar outputs
-    P1OUT = (P1OUT & 0b11111100) | (pattern & 0b00000011);
-    P1OUT = (P1OUT & 0b00001111) | ((pattern & 0b00111100) << 2);
-    P2OUT = (P2OUT & 0b00111111) | (pattern & 0b11000000);
-
-    TB0CTL &= ~TBIFG; // Clear CCR0 Flag
 }
 
 /**
@@ -182,7 +118,7 @@ __interrupt void ISR_TB1_OVERFLOW(void)
 #pragma vector = EUSCI_B0_VECTOR
 __interrupt void EUSCI_B0_I2C_ISR(void)
 {
-    key = UCB0RXBUF;
+    new_pattern = UCB0RXBUF;
     P2OUT |= BIT0;
     time_since_active = 0;
 }
