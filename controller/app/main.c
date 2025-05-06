@@ -4,7 +4,6 @@
  */
 
 #include "msp430fr2355.h"
-#include <msp430.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -23,6 +22,9 @@ volatile uint8_t i2c_tx_data[4];
 volatile unsigned int i2c_tx_index = 0;
 volatile uint8_t i2c_rx_data[2];
 volatile unsigned int i2c_rx_index = 0;
+
+volatile uint8_t old_encoder_count = 0;
+volatile uint8_t new_encoder_count = 0;
 
 void i2c_init(void);
 void i2c_write_byte(uint8_t addr, uint8_t byte);
@@ -51,7 +53,11 @@ int main(void)
 
     while (1)
     {
-        
+        if(new_encoder_count != old_encoder_count)
+        {
+            send_to_led(new_encoder_count);
+            old_encoder_count = new_encoder_count;
+        }
     }
 }
 
@@ -81,7 +87,21 @@ void i2c_init(void)
 
 void gpio_init(void)
 {
-    
+    // encoder gpio
+    P4DIR &= ~(BIT0 | BIT1);
+    P4REN &= ~(BIT0 | BIT1);
+    P4IES |= BIT0;
+
+    P4IFG &= ~BIT0;
+    P4IE |= BIT0;
+
+    // reset button
+    P1DIR &= ~BIT7;
+    P1REN &= ~BIT7;
+    P1IES |= BIT7;
+
+    P1IFG &= ~BIT7;
+    P1IE |= BIT7;
 }
 
 void send_to_lcd(uint8_t byte)
@@ -166,4 +186,29 @@ __interrupt void EUSCI_B0_I2C_ISR(void)
 __interrupt void ISR_TB1_OVERFLOW(void)
 {
     TB1CTL &= ~TBIFG;
+}
+
+#pragma vector = PORT4_VECTOR
+__interrupt void ISR_PORT4_0(void)
+{
+    if ((P4IN >> 1) & 0x01)
+    {
+        new_encoder_count = (old_encoder_count << 1) | 0x01;
+    }
+    else 
+    {
+        if(old_encoder_count != 0)
+        {
+            new_encoder_count = (old_encoder_count >> 1);
+        }
+    }
+    P4IFG &= ~BIT0;
+}
+
+#pragma vector = PORT1_VECTOR
+__interrupt void ISR_PORT1_7(void)
+{
+    new_encoder_count = 0;
+
+    P1IFG &= ~BIT7;
 }
