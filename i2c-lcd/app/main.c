@@ -23,7 +23,6 @@
 #define DB7 BIT7
 
 #define CLEAR_LCD 0x01
-#define DEGREE_SYMBOL 0xDF
 
 char key = '\0';
 
@@ -90,12 +89,6 @@ void init_i2c(void)
 int main(void)
 {
     // uint8_t cursor = 0b00001100;
-
-    const char *STATE_NAMES[] = { "off  ", "heat ", "cool ", "match" };
-    unsigned int state = 0; // 0 = off, 1 = heat, 2 = cool, 3 = match
-
-    const char n = '3';
-
     WDTCTL = WDTPW | WDTHOLD; // Stop watchdog timer
 
     // Initialize ports and other subsystems
@@ -108,64 +101,22 @@ int main(void)
     __delay_cycles(10000); // Wait ~1.6 ms
 
     // Set initial display
-    send_string(STATE_NAMES[0]);
+    send_string("X=");
+    send_string(ambient_out);
 
     send_cmd(0x88); // Send cursor to halfway of top row
-    send_string("A:");
+    send_string("Y=");
     send_string(ambient_out);
-    send_char(DEGREE_SYMBOL); // Degree symbol
-    send_char('C');
 
     send_cmd(0xC0); // Send cursor to start of bottom row
-    send_char(n);
-
-    send_char(' ');
+    send_string("Z=");
     send_string(time_out);
-    send_string("  ");
-
-    send_string("P:");
-    send_string(plant_out);
-    send_char(DEGREE_SYMBOL); // Degree symbol
-    send_char('C');
 
     __enable_interrupt(); // Enable Maskable IRQs
 
     while (true)
     {
-        switch (key) {
-            case 'D':
-                state = 0;
-                __disable_interrupt();
-                send_cmd(0x80);
-                send_string(STATE_NAMES[0]);
-                __enable_interrupt();
-                key = '\0';
-                break;
-            case 'A':
-                state = 1;
-                __disable_interrupt();
-                send_cmd(0x80);
-                send_string(STATE_NAMES[1]);
-                __enable_interrupt();
-                key = '\0';
-                break;
-            case 'B':
-                state = 2;
-                __disable_interrupt();
-                send_cmd(0x80);
-                send_string(STATE_NAMES[2]);
-                __enable_interrupt();
-                key = '\0';
-                break;
-            case 'C':
-                state = 3;
-                __disable_interrupt();
-                send_cmd(0x80);
-                send_string(STATE_NAMES[3]);
-                __enable_interrupt();
-                key = '\0';
-                break;
-        }
+        
     }
 }
 
@@ -175,7 +126,6 @@ int main(void)
  * Runs every second. Starts flashing status LED
  * 3 seconds after receiving something over I2C.
  */
- int two_second_count = 0;
 #pragma vector = TIMER1_B1_VECTOR
 __interrupt void ISR_TB1_OVERFLOW(void)
 {
@@ -184,27 +134,6 @@ __interrupt void ISR_TB1_OVERFLOW(void)
         P2OUT ^= BIT0;
     }
     time_since_active++;
-
-    send_cmd(0xC2);
-    send_string(time_out);
-
-    if (two_second_count == 2)
-    {
-        send_cmd(0x88); // Send cursor to halfway of top row
-        send_string("A:");
-        send_string(ambient_out);
-        send_char(DEGREE_SYMBOL); // Degree symbol
-        send_char('C');
-
-        // send_cmd(0xC0); // Send cursor to start of bottom row
-        // send_char(n);
-
-        send_cmd(0xC8);
-        send_string("P:");
-        send_string(plant_out);
-        send_char(DEGREE_SYMBOL); // Degree symbol
-        send_char('C');
-    }
 
     TB1CTL &= ~TBIFG; // Clear CCR0 Flag
 }
