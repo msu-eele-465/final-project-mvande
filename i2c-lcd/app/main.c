@@ -6,7 +6,7 @@
 #include <msp430fr2310.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "intrinsics.h"
+#include <string.h>
 #include "src/lcd_driver.h"
 
 #define I2C_ADDR 0x49
@@ -31,9 +31,13 @@ unsigned int time_since_active = 3;
 uint8_t buffer[3] = { 0 };
 unsigned int index;
 
-char ambient_out[] = "00.0";
-char plant_out[] = "00.0";
-char time_out[] = "000s";
+char new_x_coord[] = "000";
+char new_y_coord[] = "000";
+char new_z_coord[] = "000";
+
+char old_x_coord[] = "000";
+char old_y_coord[] = "000";
+char old_z_coord[] = "000";
 
 /**
  * Initializes all GPIO ports.
@@ -102,21 +106,41 @@ int main(void)
 
     // Set initial display
     send_string("X=");
-    send_string(ambient_out);
+    send_string(old_x_coord);
 
     send_cmd(0x88); // Send cursor to halfway of top row
     send_string("Y=");
-    send_string(ambient_out);
+    send_string(old_y_coord);
 
     send_cmd(0xC0); // Send cursor to start of bottom row
     send_string("Z=");
-    send_string(time_out);
+    send_string(old_z_coord);
 
     __enable_interrupt(); // Enable Maskable IRQs
 
     while (true)
     {
-        
+        if (strcmp(new_x_coord, old_x_coord))
+        {
+            send_cmd(0x80); // Send cursor to start of top row
+            send_string("X=");
+            send_string(new_x_coord);
+            strcpy(old_x_coord, new_x_coord);
+        }
+        if (strcmp(new_y_coord, old_y_coord))
+        {
+            send_cmd(0x88); // Send cursor to halfway of top row
+            send_string("Y=");
+            send_string(new_y_coord);
+            strcpy(old_y_coord, new_y_coord);
+        }
+        if (strcmp(new_z_coord, old_z_coord))
+        {
+            send_cmd(0xC0); // Send cursor to start of bottom row
+            send_string("Z=");
+            send_string(new_z_coord);
+            strcpy(old_z_coord, new_z_coord);
+        }
     }
 }
 
@@ -157,14 +181,27 @@ __interrupt void EUSCI_B0_I2C_ISR(void)
         buffer[index++] = data_in;
     }
 
-    if(index >= 3)
+    if(index >= 3 && key > 0x39)
     {
-        if (key == 'S')
+        if (key == 'X')
         {
-            time_out[0] = (char)buffer[0];
-            time_out[1] = (char)buffer[1];
-            time_out[2] = (char)buffer[2];
+            new_x_coord[0] = (char)buffer[0];
+            new_x_coord[1] = (char)buffer[1];
+            new_x_coord[2] = (char)buffer[2];
         }
+        else if (key == 'Y')
+        {
+            new_y_coord[0] = (char)buffer[0];
+            new_y_coord[1] = (char)buffer[1];
+            new_y_coord[2] = (char)buffer[2];
+        }
+        else if (key == 'Z')
+        {
+            new_z_coord[0] = (char)buffer[0];
+            new_z_coord[1] = (char)buffer[1];
+            new_z_coord[2] = (char)buffer[2];
+        }
+        key = '\0';
         index = 0;
         buffer[0] = 0;
         buffer[1] = 0;
